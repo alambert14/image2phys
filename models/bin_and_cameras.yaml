@@ -1,0 +1,30 @@
+directives:
+- add_frame:
+    name: bin_origin
+    X_PF:
+      base_frame: world
+      rotation: !Rpy {deg: [0.0, 0.0, 0.0]}
+      translation: [0, 0, 0]
+
+- add_model:
+    name: bin
+    file: package://local/bin.sdf
+
+- add_weld:
+    parent: bin_origin
+    child: bin::bin_base
+
+- add_frame:
+    name: camera_origin
+    X_PF:
+        base_frame: world
+        rotation: !Rpy {deg: [-180.0, 0, 90.0]}
+        translation: [0, 0, .4]
+
+- add_model:
+    name: camera
+    file: package://manipulation/camera_box.sdf
+
+- add_weld:
+    parent: camera_origin
+    child: camera::base

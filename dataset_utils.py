@@ -1,9 +1,61 @@
 import numpy as np
 import open3d as o3d
+import os
+import open3d as o3d
 
 from manipulation.meshcat_utils import draw_open3d_point_cloud, draw_points
 from manipulation.open3d_utils import create_open3d_point_cloud
 
+from ycb_downloader import fetch_objects, objects_url
+from ycb_mass import ycb_mass
+
+
+base_dir = '/home/aalamber/ycb'
+
+
+def load_point_cloud(obj_name: str) -> o3d.geometry.PointCloud:
+    """
+    :param obj_name: YCB name of object to load
+    :return: a PointCloud object loaded from the file
+    """
+    dir = os.path.join(base_dir, obj_name, 'clouds/merged_cloud.ply')
+    pcl = o3d.io.read_point_cloud(dir)
+
+    return pcl
+
+
+def load_voxels(obj_name: str) -> o3d.geometry.VoxelGrid:
+    """
+        :param obj_name: YCB name of object to load
+        :return: a VoxelGrid object loaded from the file
+        """
+    dir = os.path.join(base_dir, obj_name, 'poisson/voxel.xyz')
+    voxel_grid = o3d.io.read_voxel_grid(dir)
+    print(voxel_grid)
+    print(dir)
+    o3d.visualization.draw_geometries([voxel_grid])
+
+    return voxel_grid
+
+
+def load_voxels_from_mesh(obj_name: str) -> o3d.geometry.VoxelGrid:
+    """
+        :param obj_name: YCB name of object to load
+        :return: a VoxelGrid object loaded from the file
+        """
+    dir = os.path.join(base_dir, obj_name, 'poisson/nontextured.stl')
+    print(dir)
+    mesh = o3d.io.read_triangle_mesh(dir)
+    mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
+               center=mesh.get_center())
+    o3d.visualization.draw_geometries([mesh])
+
+    print('voxelization')
+    voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(mesh,
+                                                                  voxel_size=0.025)
+    o3d.visualization.draw_geometries([voxel_grid])
+
+    return voxel_grid
 
 def pcl_to_voxel(pcl: o3d.geometry.PointCloud, voxel_size: float = 0.001):
     """
@@ -67,18 +119,18 @@ def calculate_moment_of_inertia_origin(voxel_grid: o3d.geometry.VoxelGrid,
     Gxy /= len(voxels)
     Gyz /= len(voxels)
     Gxz /= len(voxels)
+    Gxz *= total_mass
 
     Gxx *= total_mass
     Gyy *= total_mass
     Gzz *= total_mass
     Gxy *= total_mass
     Gyz *= total_mass
-    Gxz *= total_mass
 
     print(np.array([total_mass, com[0], com[1], com[2], Gxx, Gyy, Gzz, Gxy, Gxz, Gyz]))
     return np.array([total_mass, com[0], com[1], com[2], Ixx, Iyy, Izz, Ixy, Ixz, Iyz])
 
-def calculate_interia_tensor_from_voxels(voxel_grid: o3d.geometry.VoxelGrid,
+def calculate_inertia_tensor_from_voxels(voxel_grid: o3d.geometry.VoxelGrid,
                                          total_mass: float, voxel_size = 0.001):
     """
     Find the inertia tensor of a voxelized object given a per-unit mass
@@ -146,12 +198,26 @@ def calculate_ground_truth_parameters(filename):
     pcl = o3d.io.read_point_cloud(filename)
     voxels = pcl_to_voxel(pcl)
 
-    return calculate_interia_tensor_from_voxels(voxels, 0.603000)
+    return calculate_inertia_tensor_from_voxels(voxels, 0.603000)
 
 
 if __name__ == '__main__':
-    # Open the laserscan
-    pcl = o3d.io.read_point_cloud('nontextured.ply')
-    voxels = pcl_to_voxel(pcl)
-    print(type(voxels))
-    print(calculate_interia_tensor_from_voxels(voxels, 0.603000))
+    # # Open the laserscan
+    # pcl = o3d.io.read_point_cloud('nontextured.ply')
+    # voxels = pcl_to_voxel(pcl)
+    # print(type(voxels))
+    # print(calculate_interia_tensor_from_voxels(voxels, 0.603000))
+
+    objects = fetch_objects(objects_url)
+
+    inertias = {}
+    for obj in objects:
+        try:
+            mass = ycb_mass[obj]
+        except KeyError:
+            print('key error')
+            break
+        voxels = load_voxels_from_mesh(obj)
+        inertias[obj] = calculate_inertia_tensor_from_voxels(voxels, mass * 0.001)
+
+    print(inertias)

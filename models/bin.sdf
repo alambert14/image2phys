@@ -42,7 +42,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:compliant_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
       <visual name="slope">
@@ -66,7 +66,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:soft_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
       <visual name="back">
@@ -90,7 +90,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:compliant_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
       <visual name="left">
@@ -114,7 +114,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:compliant_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
       <visual name="right">
@@ -138,7 +138,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:compliant_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
       <visual name="bottom">
@@ -162,7 +162,7 @@
             <drake:hunt_crossley_dissipation>4.5</drake:hunt_crossley_dissipation>
             <drake:mu_dynamic>1.0</drake:mu_dynamic>
             <drake:mu_static>1.0</drake:mu_static>
-            <drake:soft_hydroelastic/>
+            <!--drake:compliant_hydroelastic/-->
         </drake:proximity_properties>
       </collision>
     </link>

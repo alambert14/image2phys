@@ -52,3 +52,5 @@ def calc_bounding_box(mask, img, cam: Camera):
 
 
 
+
+

@@ -2,6 +2,9 @@ import numpy as np
 import open3d as o3d
 import os
 import open3d as o3d
+import xml.etree.ElementTree as tree
+
+from tqdm import tqdm
 
 from manipulation.meshcat_utils import draw_open3d_point_cloud, draw_points
 from manipulation.open3d_utils import create_open3d_point_cloud
@@ -31,8 +34,8 @@ def load_voxels(obj_name: str) -> o3d.geometry.VoxelGrid:
         """
     dir = os.path.join(base_dir, obj_name, 'poisson/voxel.xyz')
     voxel_grid = o3d.io.read_voxel_grid(dir)
-    print(voxel_grid)
-    print(dir)
+    # print(voxel_grid)
+    # print(dir)
     o3d.visualization.draw_geometries([voxel_grid])
 
     return voxel_grid
@@ -44,16 +47,16 @@ def load_voxels_from_mesh(obj_name: str) -> o3d.geometry.VoxelGrid:
         :return: a VoxelGrid object loaded from the file
         """
     dir = os.path.join(base_dir, obj_name, 'poisson/nontextured.stl')
-    print(dir)
+    # print(dir)
     mesh = o3d.io.read_triangle_mesh(dir)
     mesh.scale(1 / np.max(mesh.get_max_bound() - mesh.get_min_bound()),
                center=mesh.get_center())
-    o3d.visualization.draw_geometries([mesh])
+    # o3d.visualization.draw_geometries([mesh])
 
-    print('voxelization')
+    # print('voxelization')
     voxel_grid = o3d.geometry.VoxelGrid.create_from_triangle_mesh(mesh,
                                                                   voxel_size=0.025)
-    o3d.visualization.draw_geometries([voxel_grid])
+    # o3d.visualization.draw_geometries([voxel_grid])
 
     return voxel_grid
 
@@ -76,13 +79,13 @@ def calculate_moment_of_inertia_origin(voxel_grid: o3d.geometry.VoxelGrid,
                                        total_mass: float, voxel_size = 0.001):
     voxels = voxel_grid.get_voxels()
     voxel_mass = total_mass / len(voxels)
-    print(len(voxels))
+    # print(len(voxels))
 
     # TODO: Find the center of mass, and then find the moment of inertia wrt the com
     coords = np.array([voxel.grid_index for voxel in voxels]) * voxel_size
-    print(coords.shape)
+    # print(coords.shape)
     com = np.sum(coords, axis=0) / len(voxels)  # * voxel_mass / total_mass
-    print(com)
+    # print(com)
 
     # TODO: vectorize this
     Ixx = 0
@@ -140,13 +143,13 @@ def calculate_inertia_tensor_from_voxels(voxel_grid: o3d.geometry.VoxelGrid,
     """
     voxels = voxel_grid.get_voxels()
     voxel_mass = total_mass / len(voxels)
-    print(len(voxels))
+    # print(len(voxels))
 
     # TODO: Find the center of mass, and then find the moment of inertia wrt the com
     coords = np.array([voxel.grid_index for voxel in voxels]) * voxel_size
-    print(coords.shape)
+    # print(coords.shape)
     com = np.sum(coords, axis=0) / len(voxels)  #  * voxel_mass / total_mass
-    print(com)
+    # print(com)
 
     # TODO: vectorize this
     # Gxx = 0
@@ -190,8 +193,8 @@ def calculate_inertia_tensor_from_voxels(voxel_grid: o3d.geometry.VoxelGrid,
     # Gyz *= total_mass
     # Gxz *= total_mass
 
-    print(np.array([total_mass, com[0], com[1], com[2], Ixx, Iyy, Izz, Ixy, Ixz, Iyz]))
-    return np.array([total_mass, com[0], com[1], com[2], Ixx, Iyy, Izz, Ixy, Ixz, Iyz])
+    # print(np.array([total_mass, com[0], com[1], com[2], Ixx, Iyy, Izz, Ixy, Ixz, Iyz]))
+    return total_mass, com[0], com[1], com[2], Ixx, Iyy, Izz, Ixy, Ixz, Iyz
 
 
 def calculate_ground_truth_parameters(filename):
@@ -200,6 +203,85 @@ def calculate_ground_truth_parameters(filename):
 
     return calculate_inertia_tensor_from_voxels(voxels, 0.603000)
 
+
+def calculate_inertial_parameters(obj_name):
+    voxels = load_voxels_from_mesh(obj_name)
+    mass = ycb_mass[obj_name]
+    return calculate_inertia_tensor_from_voxels(voxels, mass)
+
+
+def generate_obj_sdf(obj_name) -> None:
+    """
+    Given an object model file, create an SDF definition for simulation use.
+    Saves the SDF file in '/home/aalamber/{obj_name}/poisson/model.sdf'
+    :param obj_name: The name of the object to convert to SDF
+    :return: None
+    """
+    sdf = tree.Element('sdf', attrib={'version': '1.7'})
+    sdf.text = '\n  '
+    model = tree.SubElement(sdf, 'model', attrib={'name': obj_name})
+    model.text = '\n    '
+    model.tail = '\n'
+    link = tree.SubElement(model, 'link', attrib={'name': 'base_link'})
+    link.text = '\n      '
+    link.tail = '\n  '
+    # Inertial data
+    m, cx, cy, cz, Ixx, Iyy, Izz, Ixy, Ixz, Iyz = \
+        calculate_inertial_parameters(obj_name)  # Implement this lol
+    inertial = tree.SubElement(link, 'inertial')
+    inertial.text = '\n        '
+    inertial.tail = '\n      '
+    mass = tree.SubElement(inertial, 'mass')
+    mass.text = str(m)
+    mass.tail = '\n        '
+    com = tree.SubElement(inertial, 'pose')
+    com.text = f'{cx} {cy} {cz} 0. 0. 0.'
+    com.tail = '\n        '
+
+    inertia = tree.SubElement(inertial, 'inertia')
+    inertia.text = '\n          '
+    inertia.tail = '\n      '
+    ixx = tree.SubElement(inertia, 'ixx')
+    ixx.text = str(Ixx)
+    ixx.tail = '\n          '
+    iyy = tree.SubElement(inertia, 'iyy')
+    iyy.text = str(Iyy)
+    iyy.tail = '\n          '
+    izz = tree.SubElement(inertia, 'izz')
+    izz.text = str(Izz)
+    izz.tail = '\n          '
+    ixy = tree.SubElement(inertia, 'ixy')
+    ixy.text = str(Ixy)
+    ixy.tail = '\n          '
+    ixz = tree.SubElement(inertia, 'ixz')
+    ixz.text = str(Ixz)
+    ixz.tail = '\n          '
+    iyz = tree.SubElement(inertia, 'iyz')
+    iyz.text = str(Iyz)
+    iyz.tail = '\n        '
+
+    # Visual data
+    visual = tree.SubElement(link, 'visual', attrib={'name': 'base_link'})
+    visual.text = '\n        '
+    visual.tail = '\n    '
+    pose = tree.SubElement(visual, 'pose')
+    pose.text = '0. 0. 0. 0. 0. 0.'
+    pose.tail = '\n        '
+    geometry = tree.SubElement(visual, 'geometry')
+    geometry.text = '\n          '
+    geometry.tail = '\n      '
+    mesh = tree.SubElement(geometry, 'mesh')
+    mesh.text = '\n            '
+    mesh.tail = '\n        '
+    uri = tree.SubElement(mesh, 'uri')
+    uri.text = os.path.join(base_dir, obj_name, 'poisson/textured.obj')
+    uri.tail = '\n          '
+
+    # TODO: Collision
+
+    element_tree = tree.ElementTree(sdf)
+    output_file = os.path.join(base_dir, obj_name, 'poisson/model.sdf')
+    element_tree.write(output_file, xml_declaration=True)
 
 if __name__ == '__main__':
     # # Open the laserscan
@@ -211,13 +293,21 @@ if __name__ == '__main__':
     objects = fetch_objects(objects_url)
 
     inertias = {}
-    for obj in objects:
+    exclude = {'023_wine_glass'}
+    for obj in tqdm(objects):
+        print(obj)
         try:
             mass = ycb_mass[obj]
         except KeyError:
-            print('key error')
-            break
-        voxels = load_voxels_from_mesh(obj)
-        inertias[obj] = calculate_inertia_tensor_from_voxels(voxels, mass * 0.001)
+            print(f'key error: {obj}')
+            continue
 
-    print(inertias)
+        # if os.path.exists(os.path.join(base_dir, obj, 'poisson/model.sdf')):
+        #     continue
+        # voxels = load_voxels_from_mesh(obj)
+        # inertias[obj] = calculate_inertia_tensor_from_voxels(voxels, mass * 0.001)
+        generate_obj_sdf(obj)
+
+    # print(inertias)
+
+    # generate_obj_sdf('001_chips_can')

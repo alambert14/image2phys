@@ -232,38 +232,38 @@ def generate_obj_sdf(obj_name) -> None:
     inertial.text = '\n        '
     inertial.tail = '\n      '
     mass = tree.SubElement(inertial, 'mass')
-    mass.text = str(m)
+    mass.text = f'{m:.3f}'
     mass.tail = '\n        '
     com = tree.SubElement(inertial, 'pose')
-    com.text = f'{cx} {cy} {cz} 0. 0. 0.'
+    com.text = f'{cx:.6f} {cy:.6f} {cz:.6f} 0. 0. 0.'
     com.tail = '\n        '
 
     inertia = tree.SubElement(inertial, 'inertia')
     inertia.text = '\n          '
     inertia.tail = '\n      '
     ixx = tree.SubElement(inertia, 'ixx')
-    ixx.text = str(Ixx)
+    ixx.text = f'{Ixx:.6f}'
     ixx.tail = '\n          '
     iyy = tree.SubElement(inertia, 'iyy')
-    iyy.text = str(Iyy)
+    iyy.text = f'{Iyy:.6f}'
     iyy.tail = '\n          '
     izz = tree.SubElement(inertia, 'izz')
-    izz.text = str(Izz)
+    izz.text = f'{Izz:.6f}'
     izz.tail = '\n          '
     ixy = tree.SubElement(inertia, 'ixy')
-    ixy.text = str(Ixy)
+    ixy.text = f'{Ixy:.6f}'
     ixy.tail = '\n          '
     ixz = tree.SubElement(inertia, 'ixz')
-    ixz.text = str(Ixz)
+    ixz.text = f'{Ixz:.6f}'
     ixz.tail = '\n          '
     iyz = tree.SubElement(inertia, 'iyz')
-    iyz.text = str(Iyz)
+    iyz.text = f'{Iyz:.6f}'
     iyz.tail = '\n        '
 
     # Visual data
     visual = tree.SubElement(link, 'visual', attrib={'name': 'base_link'})
     visual.text = '\n        '
-    visual.tail = '\n    '
+    visual.tail = '\n      '
     pose = tree.SubElement(visual, 'pose')
     pose.text = '0. 0. 0. 0. 0. 0.'
     pose.tail = '\n        '
@@ -278,6 +278,20 @@ def generate_obj_sdf(obj_name) -> None:
     uri.tail = '\n          '
 
     # TODO: Collision
+    collision = tree.SubElement(link, 'collision', attrib={'name': 'obj_collision'})
+    collision.text = '\n        '
+    collision.tail = '\n    '
+    geometry2 = tree.SubElement(collision, 'geometry')
+    geometry2.text = '\n          '
+    geometry2.tail = '\n      '
+    mesh2 = tree.SubElement(geometry2, 'mesh')
+    mesh2.text = '\n            '
+    mesh2.tail = '\n        '
+    uri2 = tree.SubElement(mesh2, 'uri')
+    uri2.text = os.path.join(base_dir, obj_name, 'poisson/textured.obj')
+    uri2.tail = '\n            '
+    convex = tree.SubElement(mesh2, 'drake:declare_convex', attrib={'xmlns:drake': 'drake.mit.edu'})
+    convex.tail = '\n          '
 
     element_tree = tree.ElementTree(sdf)
     output_file = os.path.join(base_dir, obj_name, 'poisson/model.sdf')

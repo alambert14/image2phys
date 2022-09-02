@@ -1,6 +1,6 @@
 ycb_mass = {
-    '001_chips_can': 147.418,
-    '002_master_chef_can': 453.592,
+    '001_chips_can': .147418,
+    '002_master_chef_can': .453592,
     '003_cracker_box': 0.411,
     '004_sugar_box': 0.514,
     '005_tomato_soup_can': 0.349,

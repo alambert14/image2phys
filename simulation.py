@@ -52,7 +52,7 @@ def make_environment():
     add_package_paths_local(parser)  # local.
     ProcessModelDirectives(LoadModelDirectives(directive), plant, parser)
 
-    obj_name = np.random.choice(list(ycb_mass.keys()))
+    obj_name = '006_mustard_bottle' # np.random.choice(list(ycb_mass.keys()))
     # for obj_name in ycb_mass:
     #     utils.generate_obj_sdf(obj_name)
     #     try:
@@ -62,7 +62,7 @@ def make_environment():
     #         print('Could not find file')
     #         continue
 
-    model = parser.AddModelFromFile(
+    model = parser.AddModelFromFile(# '/home/aalamber/ycb_sdf/ycb_gazebo_sdf-master/006_mustard_bottle_textured/model.sdf')
         os.path.join(object_dir, obj_name, 'poisson/model.sdf'))
 
     plant.Finalize()
@@ -88,8 +88,8 @@ if __name__ == '__main__':
     cam_context = cam.GetMyMutableContextFromRoot(context)
     img = cam.GetOutputPort('color_image').Eval(cam_context).data
 
-    simulator.AdvanceTo(10)
-
     img_rgb = img[:, :, :-1]
     img_rgb = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2RGB)
     cv2.imwrite('rgb_image.png', img_rgb)
+
+    simulator.AdvanceTo(10)

@@ -16,7 +16,7 @@ class ConvNeuralNet(nn.Module):
 
     def __init__(self):
         super(ConvNeuralNet, self).__init__()
-        self.conv_layer1 = nn.Conv2d(in_cha nnels=3, out_channels=32, kernel_size=3)
+        self.conv_layer1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3)
         self.conv_layer1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3)
         self.max_pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
 
